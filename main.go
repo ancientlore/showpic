@@ -108,7 +108,7 @@ func showImage(s tcell.Screen, img image.Image) {
 				m.SetSize(c, r*2)
 				m.Sync()
 				m.DrawTo(s)
-				s.Sync()
+				s.Show()
 			}
 		}
 	}()
