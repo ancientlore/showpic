@@ -33,16 +33,20 @@ func main() {
 	s.Clear()
 
 	for i := 0; i < flag.NArg(); i++ {
+		var r bool
 		img, err := loadImage(flag.Arg(i))
 		if err != nil {
-			log(s, err.Error())
+			r = log(s, err.Error())
 		} else {
-			showImage(s, img)
+			r = showImage(s, img)
+		}
+		if r {
+			break
 		}
 	}
 }
 
-func log(s tcell.Screen, msg string) {
+func log(s tcell.Screen, msg string) bool {
 	w, _ := s.Size()
 	r, c := 0, 0
 	for _, ch := range msg {
@@ -53,6 +57,7 @@ func log(s tcell.Screen, msg string) {
 			r++
 		}
 	}
+	result := false
 	quit := make(chan struct{})
 	go func() {
 		for {
@@ -63,6 +68,13 @@ func log(s tcell.Screen, msg string) {
 				case tcell.KeyEscape, tcell.KeyEnter:
 					close(quit)
 					return
+				case tcell.KeyRune:
+					switch ev.Rune() {
+					case 'q':
+						result = true
+						close(quit)
+						return
+					}
 				}
 			}
 		}
@@ -70,7 +82,7 @@ func log(s tcell.Screen, msg string) {
 
 	s.Show()
 	<-quit
-
+	return result
 }
 
 func loadImage(fn string) (image.Image, error) {
@@ -83,11 +95,12 @@ func loadImage(fn string) (image.Image, error) {
 	return m, err
 }
 
-func showImage(s tcell.Screen, img image.Image) {
+func showImage(s tcell.Screen, img image.Image) bool {
 	cols, rows := s.Size()
 
 	m := newMapper(img, cols, rows*2)
 
+	result := false
 	quit := make(chan struct{})
 	go func() {
 		for {
@@ -132,6 +145,10 @@ func showImage(s tcell.Screen, img image.Image) {
 						m.ResetZoom()
 						m.DrawTo(s)
 						s.Show()
+					case 'q':
+						result = true
+						close(quit)
+						return
 					}
 				}
 			case *tcell.EventResize:
@@ -146,4 +163,5 @@ func showImage(s tcell.Screen, img image.Image) {
 	m.DrawTo(s)
 	s.Show()
 	<-quit
+	return result
 }
