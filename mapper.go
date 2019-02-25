@@ -83,29 +83,47 @@ func (m *mapper) ResetZoom() {
 }
 
 func (m *mapper) ZoomIn() {
-	b := m.img.Bounds()
-	sz := (b.Size().X/m.width + b.Size().Y/m.height) / 2
+	sz := m.sz()
 	r := m.window.Inset(sz)
-	if r.In(m.img.Bounds()) {
+	if !r.Empty() {
+		/*
+			viewportAspect := float64(m.width) / float64(m.height)
+			aspect := float64(r.Dx()) / float64(r.Dy())
+			if aspect < viewportAspect {
+				// r.Min.X -= sz
+				r.Max.X += sz
+			} else if aspect > viewportAspect {
+				// r.Min.Y -= sz
+				r.Max.Y += sz
+			}
+		*/
+		r = r.Intersect(m.img.Bounds())
 		m.window = r
 		m.Sync()
 	}
 }
 
 func (m *mapper) ZoomOut() {
-	b := m.img.Bounds()
-	sz := (b.Size().X/m.width + b.Size().Y/m.height) / 2
+	sz := m.sz()
 	r := m.window.Inset(-sz)
-	if r.In(m.img.Bounds()) {
-		m.window = r
-		m.Sync()
-	}
+	/*
+		viewportAspect := float64(m.width) / float64(m.height)
+		aspect := float64(r.Dx()) / float64(r.Dy())
+		if aspect < viewportAspect {
+			// r.Min.X -= sz
+			r.Max.X += sz
+		} else if aspect > viewportAspect {
+			// r.Min.Y -= sz
+			r.Max.Y += sz
+		}
+	*/
+	r = r.Intersect(m.img.Bounds())
+	m.window = r
+	m.Sync()
 }
 
 func (m *mapper) Left() {
-	b := m.img.Bounds()
-	sz := b.Size().X / m.width
-	r := m.window.Sub(image.Point{X: sz, Y: 0})
+	r := m.window.Sub(image.Point{X: m.sz(), Y: 0})
 	if r.In(m.img.Bounds()) {
 		m.window = r
 		m.Sync()
@@ -113,9 +131,7 @@ func (m *mapper) Left() {
 }
 
 func (m *mapper) Right() {
-	b := m.img.Bounds()
-	sz := b.Size().X / m.width
-	r := m.window.Add(image.Point{X: sz, Y: 0})
+	r := m.window.Add(image.Point{X: m.sz(), Y: 0})
 	if r.In(m.img.Bounds()) {
 		m.window = r
 		m.Sync()
@@ -123,9 +139,7 @@ func (m *mapper) Right() {
 }
 
 func (m *mapper) Up() {
-	b := m.img.Bounds()
-	sz := b.Size().Y / m.height
-	r := m.window.Sub(image.Point{X: 0, Y: sz})
+	r := m.window.Sub(image.Point{X: 0, Y: m.sz()})
 	if r.In(m.img.Bounds()) {
 		m.window = r
 		m.Sync()
@@ -133,11 +147,19 @@ func (m *mapper) Up() {
 }
 
 func (m *mapper) Down() {
-	b := m.img.Bounds()
-	sz := b.Size().Y / m.height
-	r := m.window.Add(image.Point{X: 0, Y: sz})
+	r := m.window.Add(image.Point{X: 0, Y: m.sz()})
 	if r.In(m.img.Bounds()) {
 		m.window = r
 		m.Sync()
 	}
+}
+
+func (m mapper) sz() int {
+	szx := m.img.Bounds().Dx() / m.width
+	szy := m.img.Bounds().Dy() / m.height
+	// the larger value is the edge that was fit
+	if szx > szy {
+		return szx
+	}
+	return szy
 }
