@@ -28,7 +28,8 @@ func usage() {
 
 func main() {
 	var (
-		flagHelp = flag.Bool("help", false, "Show help")
+		flagHelp = flag.Bool("help", false, "Show help.")
+		flagGray = flag.Bool("grayscale", false, "Show images in grayscale.")
 	)
 	flag.Usage = usage
 	flag.Parse()
@@ -60,7 +61,7 @@ func main() {
 		if err != nil {
 			r = log(s, err.Error())
 		} else {
-			r = showImage(s, img)
+			r = showImage(s, img, *flagGray)
 		}
 		if r {
 			break
@@ -133,10 +134,10 @@ func loadImage(fn string) (image.Image, error) {
 	return m, err
 }
 
-func showImage(s tcell.Screen, img image.Image) bool {
+func showImage(s tcell.Screen, img image.Image, gray bool) bool {
 	cols, rows := s.Size()
 
-	m := newMapper(img, cols, rows*2)
+	m := newMapper(img, cols, rows*2, gray)
 
 	result := false
 	quit := make(chan struct{})

@@ -18,14 +18,16 @@ type mapper struct {
 	height int             // Twice the height of terminal window
 	window image.Rectangle // Windows into the original image
 	scaled image.Image     // scaled image
+	gray   bool            // want grayscale
 }
 
-func newMapper(img image.Image, width, height int) *mapper {
+func newMapper(img image.Image, width, height int, gray bool) *mapper {
 	m := &mapper{
 		img:    img,
 		width:  width,
 		height: height,
 		window: img.Bounds(),
+		gray:   gray,
 	}
 	m.Sync()
 	return m
@@ -59,6 +61,9 @@ func (m *mapper) Sync() {
 		img = si.SubImage(m.window)
 	}
 	m.scaled = imaging.Fit(img, m.width, m.height, imaging.Box)
+	if m.gray {
+		m.scaled = imaging.Grayscale(m.scaled)
+	}
 }
 
 func (m mapper) DrawTo(s tcell.Screen) {
