@@ -102,11 +102,41 @@ func showImage(s tcell.Screen, img image.Image) {
 					m.Sync()
 					m.DrawTo(s)
 					s.Sync()
+				case tcell.KeyUp:
+					m.Up()
+					m.DrawTo(s)
+					s.Show()
+				case tcell.KeyDown:
+					m.Down()
+					m.DrawTo(s)
+					s.Show()
+				case tcell.KeyLeft:
+					m.Left()
+					m.DrawTo(s)
+					s.Show()
+				case tcell.KeyRight:
+					m.Right()
+					m.DrawTo(s)
+					s.Show()
+				case tcell.KeyRune:
+					switch ev.Rune() {
+					case '-':
+						m.ZoomOut()
+						m.DrawTo(s)
+						s.Show()
+					case '+', 'z':
+						m.ZoomIn()
+						m.DrawTo(s)
+						s.Show()
+					case '0':
+						m.ResetZoom()
+						m.DrawTo(s)
+						s.Show()
+					}
 				}
 			case *tcell.EventResize:
 				c, r := ev.Size()
 				m.SetSize(c, r*2)
-				m.Sync()
 				m.DrawTo(s)
 				s.Show()
 			}

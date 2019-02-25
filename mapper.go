@@ -8,11 +8,15 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+type subimage interface {
+	SubImage(r image.Rectangle) image.Image
+}
+
 type mapper struct {
 	img    image.Image     // Original image
 	width  int             // Width of terminal window
 	height int             // Twice the height of terminal window
-	Window image.Rectangle // Windows into the original image
+	window image.Rectangle // Windows into the original image
 	scaled image.Image     // scaled image
 }
 
@@ -21,7 +25,7 @@ func newMapper(img image.Image, width, height int) *mapper {
 		img:    img,
 		width:  width,
 		height: height,
-		Window: img.Bounds(),
+		window: img.Bounds(),
 	}
 	m.Sync()
 	return m
@@ -49,7 +53,12 @@ func (m *mapper) SetSize(width, height int) {
 }
 
 func (m *mapper) Sync() {
-	m.scaled = imaging.Fit(m.img, m.width, m.height, imaging.Box)
+	img := m.img
+	si, ok := img.(subimage)
+	if ok {
+		img = si.SubImage(m.window)
+	}
+	m.scaled = imaging.Fit(img, m.width, m.height, imaging.Box)
 }
 
 func (m mapper) DrawTo(s tcell.Screen) {
@@ -61,5 +70,70 @@ func (m mapper) DrawTo(s tcell.Screen) {
 			fg := tcell.NewRGBColor(int32(red), int32(green), int32(blue))
 			s.SetCell(c, r/2, tcell.StyleDefault.Foreground(fg).Background(bg), '▄')
 		}
+	}
+}
+
+func (m *mapper) ResetZoom() {
+	m.window = m.img.Bounds()
+	m.Sync()
+}
+
+func (m *mapper) ZoomIn() {
+	b := m.img.Bounds()
+	sz := (b.Size().X/m.width + b.Size().Y/m.height) / 2
+	r := m.window.Inset(sz)
+	if r.In(m.img.Bounds()) {
+		m.window = r
+		m.Sync()
+	}
+}
+
+func (m *mapper) ZoomOut() {
+	b := m.img.Bounds()
+	sz := (b.Size().X/m.width + b.Size().Y/m.height) / 2
+	r := m.window.Inset(-sz)
+	if r.In(m.img.Bounds()) {
+		m.window = r
+		m.Sync()
+	}
+}
+
+func (m *mapper) Left() {
+	b := m.img.Bounds()
+	sz := b.Size().X / m.width
+	r := m.window.Sub(image.Point{X: sz, Y: 0})
+	if r.In(m.img.Bounds()) {
+		m.window = r
+		m.Sync()
+	}
+}
+
+func (m *mapper) Right() {
+	b := m.img.Bounds()
+	sz := b.Size().X / m.width
+	r := m.window.Add(image.Point{X: sz, Y: 0})
+	if r.In(m.img.Bounds()) {
+		m.window = r
+		m.Sync()
+	}
+}
+
+func (m *mapper) Up() {
+	b := m.img.Bounds()
+	sz := b.Size().Y / m.height
+	r := m.window.Sub(image.Point{X: 0, Y: sz})
+	if r.In(m.img.Bounds()) {
+		m.window = r
+		m.Sync()
+	}
+}
+
+func (m *mapper) Down() {
+	b := m.img.Bounds()
+	sz := b.Size().Y / m.height
+	r := m.window.Add(image.Point{X: 0, Y: sz})
+	if r.In(m.img.Bounds()) {
+		m.window = r
+		m.Sync()
 	}
 }
