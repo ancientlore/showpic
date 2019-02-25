@@ -85,19 +85,19 @@ func (m *mapper) ResetZoom() {
 func (m *mapper) ZoomIn() {
 	sz := m.sz()
 	r := m.window.Inset(sz)
-	if !r.Empty() {
-		/*
-			viewportAspect := float64(m.width) / float64(m.height)
-			aspect := float64(r.Dx()) / float64(r.Dy())
-			if aspect < viewportAspect {
-				// r.Min.X -= sz
-				r.Max.X += sz
-			} else if aspect > viewportAspect {
-				// r.Min.Y -= sz
-				r.Max.Y += sz
-			}
-		*/
-		r = r.Intersect(m.img.Bounds())
+	viewportAspect := float64(m.width) / float64(m.height)
+	aspect := float64(r.Dx()) / float64(r.Dy())
+	if aspect < viewportAspect {
+		d := int(float64(r.Dy())*viewportAspect) - r.Dx()
+		r.Min.X -= d / 2
+		r.Max.X += d / 2
+	} else if aspect > viewportAspect {
+		d := int(float64(r.Dx())/viewportAspect) - r.Dy()
+		r.Min.Y -= d / 2
+		r.Max.Y += d / 2
+	}
+	r = r.Intersect(m.img.Bounds())
+	if r.Dx() >= sz*2 && r.Dy() >= sz*2 {
 		m.window = r
 		m.Sync()
 	}
@@ -106,17 +106,17 @@ func (m *mapper) ZoomIn() {
 func (m *mapper) ZoomOut() {
 	sz := m.sz()
 	r := m.window.Inset(-sz)
-	/*
-		viewportAspect := float64(m.width) / float64(m.height)
-		aspect := float64(r.Dx()) / float64(r.Dy())
-		if aspect < viewportAspect {
-			// r.Min.X -= sz
-			r.Max.X += sz
-		} else if aspect > viewportAspect {
-			// r.Min.Y -= sz
-			r.Max.Y += sz
-		}
-	*/
+	viewportAspect := float64(m.width) / float64(m.height)
+	aspect := float64(r.Dx()) / float64(r.Dy())
+	if aspect < viewportAspect {
+		d := int(float64(r.Dy())*viewportAspect) - r.Dx()
+		r.Min.X -= d / 2
+		r.Max.X += d / 2
+	} else if aspect > viewportAspect {
+		d := int(float64(r.Dx())/viewportAspect) - r.Dy()
+		r.Min.Y -= d / 2
+		r.Max.Y += d / 2
+	}
 	r = r.Intersect(m.img.Bounds())
 	m.window = r
 	m.Sync()
