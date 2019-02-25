@@ -68,7 +68,11 @@ func (m mapper) DrawTo(s tcell.Screen) {
 			bg := tcell.NewRGBColor(int32(red), int32(green), int32(blue))
 			red, green, blue, _ = m.scaled.At(c, r+1).RGBA()
 			fg := tcell.NewRGBColor(int32(red), int32(green), int32(blue))
-			s.SetCell(c, r/2, tcell.StyleDefault.Foreground(fg).Background(bg), '▄')
+			rn := '▄'
+			if fg == bg {
+				rn = ' '
+			}
+			s.SetCell(c, r/2, tcell.StyleDefault.Foreground(fg).Background(bg), rn)
 		}
 	}
 }
