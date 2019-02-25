@@ -16,8 +16,23 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+func usage() {
+	fmt.Fprintln(os.Stderr, "showpic display images on a terminal.\nSupported formats include gif, bmp, tiff, png, and jpg.")
+	fmt.Fprintln(os.Stderr, "\nExamples:\n  showpic *.png\n  TERM=xterm-truecolor showpic *.tiff")
+	fmt.Fprintln(os.Stderr, "\nOptions:")
+	flag.PrintDefaults()
+}
+
 func main() {
+	var (
+		flagHelp = flag.Bool("help", false, "Show help")
+	)
+	flag.Usage = usage
 	flag.Parse()
+
+	if *flagHelp || flag.NArg() == 0 {
+		usage()
+	}
 
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, err := tcell.NewScreen()
