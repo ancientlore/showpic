@@ -7,5 +7,6 @@ require (
 	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
 	golang.org/x/arch v0.0.0-20181203225421-5a4828bb7045 // indirect
 	golang.org/x/crypto v0.0.0-20190222235706-ffb98f73852f // indirect
+	golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81
 	golang.org/x/sys v0.0.0-20190222171317-cd391775e71e // indirect
 )

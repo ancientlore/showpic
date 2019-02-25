@@ -9,6 +9,10 @@ import (
 	_ "image/png"
 	"os"
 
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
+	_ "golang.org/x/image/webp"
+
 	"github.com/gdamore/tcell"
 )
 
