@@ -7,7 +7,10 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"io"
+	"net/http"
 	"os"
+	"strings"
 
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
@@ -18,7 +21,7 @@ import (
 
 func usage() {
 	fmt.Fprintln(os.Stderr, "showpic display images on a terminal.\nSupported formats include gif, bmp, tiff, png, and jpg.")
-	fmt.Fprintln(os.Stderr, "\nExamples:\n  showpic *.png\n  TERM=xterm-truecolor showpic *.tiff")
+	fmt.Fprintln(os.Stderr, "\nExamples:\n  showpic *.png\n  TERM=xterm-truecolor showpic *.tiff\n  showpic http://webnull.ancientlore.io/media/null.png")
 	fmt.Fprintln(os.Stderr, "\nOptions:")
 	flag.PrintDefaults()
 }
@@ -105,9 +108,25 @@ func log(s tcell.Screen, msg string) bool {
 }
 
 func loadImage(fn string) (image.Image, error) {
-	reader, err := os.Open(fn)
-	if err != nil {
-		return nil, err
+	var (
+		reader io.ReadCloser
+		err    error
+	)
+	if strings.HasPrefix(fn, "http://") || strings.HasPrefix(fn, "https://") {
+		resp, err := http.Get(fn)
+		if err != nil {
+			return nil, err
+		}
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			reader = resp.Body
+		} else {
+			return nil, fmt.Errorf("HTTP Status %d: %s", resp.StatusCode, resp.Status)
+		}
+	} else {
+		reader, err = os.Open(fn)
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer reader.Close()
 	m, _, err := image.Decode(reader)
