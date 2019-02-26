@@ -51,7 +51,7 @@ func (m mapper) At(x, y int) color.Color {
 func (m *mapper) SetSize(width, height int) {
 	m.width = width
 	m.height = height
-	m.Sync()
+	// m.Sync()
 }
 
 func (m *mapper) Sync() {
@@ -67,6 +67,7 @@ func (m *mapper) Sync() {
 }
 
 func (m mapper) DrawTo(s tcell.Screen) {
+	m.Sync()
 	for r := 0; r < m.height; r += 2 {
 		for c := 0; c < m.width; c++ {
 			red, green, blue, _ := m.scaled.At(c, r).RGBA()
@@ -84,7 +85,7 @@ func (m mapper) DrawTo(s tcell.Screen) {
 
 func (m *mapper) ResetZoom() {
 	m.window = m.img.Bounds()
-	m.Sync()
+	// m.Sync()
 }
 
 func (m *mapper) ZoomIn() {
@@ -104,7 +105,7 @@ func (m *mapper) ZoomIn() {
 	r = r.Intersect(m.img.Bounds())
 	if r.Dx() >= sz*2 && r.Dy() >= sz*2 {
 		m.window = r
-		m.Sync()
+		// m.Sync()
 	}
 }
 
@@ -124,14 +125,14 @@ func (m *mapper) ZoomOut() {
 	}
 	r = r.Intersect(m.img.Bounds())
 	m.window = r
-	m.Sync()
+	// m.Sync()
 }
 
 func (m *mapper) Left() {
 	r := m.window.Sub(image.Point{X: m.sz(), Y: 0})
 	if r.In(m.img.Bounds()) {
 		m.window = r
-		m.Sync()
+		// m.Sync()
 	}
 }
 
@@ -139,7 +140,7 @@ func (m *mapper) Right() {
 	r := m.window.Add(image.Point{X: m.sz(), Y: 0})
 	if r.In(m.img.Bounds()) {
 		m.window = r
-		m.Sync()
+		// m.Sync()
 	}
 }
 
@@ -147,7 +148,7 @@ func (m *mapper) Up() {
 	r := m.window.Sub(image.Point{X: 0, Y: m.sz()})
 	if r.In(m.img.Bounds()) {
 		m.window = r
-		m.Sync()
+		// m.Sync()
 	}
 }
 
@@ -155,7 +156,7 @@ func (m *mapper) Down() {
 	r := m.window.Add(image.Point{X: 0, Y: m.sz()})
 	if r.In(m.img.Bounds()) {
 		m.window = r
-		m.Sync()
+		// m.Sync()
 	}
 }
 

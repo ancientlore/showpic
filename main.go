@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
@@ -139,8 +140,44 @@ func showImage(s tcell.Screen, img image.Image, gray bool) bool {
 
 	m := newMapper(img, cols, rows*2, gray)
 
-	result := false
 	quit := make(chan struct{})
+	result := false
+	show := make(chan bool, 8)
+
+	// Don't show too quickly if we are zooming or panning rapidly
+	go func() {
+		for {
+			select {
+			case <-quit:
+				return
+			case b := <-show:
+				if b {
+					t := time.NewTimer(time.Millisecond * 10)
+					c := 0
+				loop:
+					for {
+						select {
+						case b2 := <-show:
+							if !b2 {
+								break loop
+							}
+							c++
+						case <-t.C:
+							break loop
+						}
+					}
+					t.Stop()
+					m.DrawTo(s)
+					s.Show()
+					// fmt.Printf("Ate %d events\n", c)
+				} else {
+					m.DrawTo(s)
+					s.Sync()
+				}
+			}
+		}
+	}()
+
 	go func() {
 		for {
 			ev := s.PollEvent()
@@ -152,38 +189,38 @@ func showImage(s tcell.Screen, img image.Image, gray bool) bool {
 					return
 				case tcell.KeyCtrlL:
 					m.Sync()
-					m.DrawTo(s)
-					s.Sync()
+					// m.DrawTo(s)
+					show <- false // s.Sync()
 				case tcell.KeyUp:
 					m.Up()
-					m.DrawTo(s)
-					s.Show()
+					// m.DrawTo(s)
+					show <- true // s.Show()
 				case tcell.KeyDown:
 					m.Down()
-					m.DrawTo(s)
-					s.Show()
+					// m.DrawTo(s)
+					show <- true // s.Show()
 				case tcell.KeyLeft:
 					m.Left()
-					m.DrawTo(s)
-					s.Show()
+					// m.DrawTo(s)
+					show <- true // s.Show()
 				case tcell.KeyRight:
 					m.Right()
-					m.DrawTo(s)
-					s.Show()
+					// m.DrawTo(s)
+					show <- true // s.Show()
 				case tcell.KeyRune:
 					switch ev.Rune() {
 					case '-':
 						m.ZoomOut()
-						m.DrawTo(s)
-						s.Show()
+						// m.DrawTo(s)
+						show <- true // s.Show()
 					case '+', 'z':
 						m.ZoomIn()
-						m.DrawTo(s)
-						s.Show()
+						// m.DrawTo(s)
+						show <- true // s.Show()
 					case '0':
 						m.ResetZoom()
-						m.DrawTo(s)
-						s.Show()
+						// m.DrawTo(s)
+						show <- true // s.Show()
 					case 'q':
 						result = true
 						close(quit)
@@ -193,8 +230,8 @@ func showImage(s tcell.Screen, img image.Image, gray bool) bool {
 			case *tcell.EventResize:
 				c, r := ev.Size()
 				m.SetSize(c, r*2)
-				m.DrawTo(s)
-				s.Show()
+				// m.DrawTo(s)
+				show <- true // s.Show()
 			}
 		}
 	}()
