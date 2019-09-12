@@ -10,3 +10,5 @@ require (
 	golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81
 	golang.org/x/sys v0.0.0-20190222171317-cd391775e71e // indirect
 )
+
+go 1.13
