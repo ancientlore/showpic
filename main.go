@@ -29,8 +29,9 @@ func usage() {
 
 func main() {
 	var (
-		flagHelp = flag.Bool("help", false, "Show help.")
-		flagGray = flag.Bool("grayscale", false, "Show images in grayscale.")
+		flagHelp      = flag.Bool("help", false, "Show help.")
+		flagGray      = flag.Bool("grayscale", false, "Show images in grayscale.")
+		flagSlideShow = flag.Duration("slideshow", 0, "Show slideshow with given timeout.")
 	)
 	flag.Usage = usage
 	flag.Parse()
@@ -62,7 +63,7 @@ func main() {
 		if err != nil {
 			r = log(s, err.Error())
 		} else {
-			r = showImage(s, img, *flagGray)
+			r = showImage(s, img, *flagGray, *flagSlideShow)
 		}
 		if r {
 			break
@@ -135,7 +136,7 @@ func loadImage(fn string) (image.Image, error) {
 	return m, err
 }
 
-func showImage(s tcell.Screen, img image.Image, gray bool) bool {
+func showImage(s tcell.Screen, img image.Image, gray bool, timeout time.Duration) bool {
 	cols, rows := s.Size()
 
 	m := newMapper(img, cols, rows*2, gray)
@@ -227,6 +228,9 @@ func showImage(s tcell.Screen, img image.Image, gray bool) bool {
 						return
 					}
 				}
+			case *tcell.EventInterrupt:
+				close(quit)
+				return
 			case *tcell.EventResize:
 				c, r := ev.Size()
 				m.SetSize(c, r*2)
@@ -235,6 +239,19 @@ func showImage(s tcell.Screen, img image.Image, gray bool) bool {
 			}
 		}
 	}()
+
+	if timeout > 0 {
+		go func() {
+			t := time.NewTimer(timeout)
+			defer t.Stop()
+			select {
+			case <-t.C:
+				s.PostEvent(tcell.NewEventInterrupt(nil))
+			case <-quit:
+				break
+			}
+		}()
+	}
 
 	m.DrawTo(s)
 	s.Show()
