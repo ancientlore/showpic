@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -38,6 +39,7 @@ func main() {
 
 	if *flagHelp || flag.NArg() == 0 {
 		usage()
+		return
 	}
 
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
@@ -58,15 +60,22 @@ func main() {
 	s.Clear()
 
 	for i := 0; i < flag.NArg(); i++ {
-		var r bool
-		img, err := loadImage(flag.Arg(i))
+		entries, err := filepath.Glob(flag.Arg(i))
 		if err != nil {
-			r = log(s, err.Error())
+			fmt.Fprintln(os.Stderr, err)
 		} else {
-			r = showImage(s, img, *flagGray, *flagSlideShow)
-		}
-		if r {
-			break
+			for _, entry := range entries {
+				var r bool
+				img, err := loadImage(entry)
+				if err != nil {
+					r = log(s, err.Error())
+				} else {
+					r = showImage(s, img, *flagGray, *flagSlideShow)
+				}
+				if r {
+					return
+				}
+			}
 		}
 	}
 }
