@@ -3,7 +3,7 @@ module github.com/ancientlore/showpic
 require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/gdamore/tcell v1.4.0
-	golang.org/x/image v0.14.0
+	golang.org/x/image v0.15.0
 )
 
 require (
