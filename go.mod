@@ -3,7 +3,7 @@ module github.com/ancientlore/showpic
 require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/gdamore/tcell v1.4.0
-	golang.org/x/image v0.23.0
+	golang.org/x/image v0.24.0
 )
 
 require (
@@ -12,7 +12,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 )
 
 go 1.19
