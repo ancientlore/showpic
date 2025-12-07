@@ -18,7 +18,7 @@ import (
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
 
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v3"
 )
 
 func usage() {
@@ -49,7 +49,7 @@ func main() {
 		os.Exit(1)
 	}
 	if err = s.Init(); err != nil {
-		fmt.Fprintln(os.Stdout, err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	defer s.Fini()
@@ -60,9 +60,17 @@ func main() {
 	s.Clear()
 
 	for i := 0; i < flag.NArg(); i++ {
-		entries, err := filepath.Glob(flag.Arg(i))
+		var entries []string
+		fn := flag.Arg(i)
+		if strings.HasPrefix(fn, "http://") || strings.HasPrefix(fn, "https://") {
+			entries = []string{fn}
+		} else {
+			entries, err = filepath.Glob(flag.Arg(i))
+		}
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			log(s, err.Error())
+		} else if len(entries) == 0 {
+			log(s, fmt.Sprintf("%q not found", flag.Arg(i)))
 		} else {
 			for _, entry := range entries {
 				var r bool
@@ -84,7 +92,7 @@ func log(s tcell.Screen, msg string) bool {
 	w, _ := s.Size()
 	r, c := 0, 0
 	for _, ch := range msg {
-		s.SetCell(c, r, tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite), ch)
+		s.Put(c, r, string(ch), tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite))
 		c++
 		if c > w {
 			c = 0
@@ -94,17 +102,16 @@ func log(s tcell.Screen, msg string) bool {
 	result := false
 	quit := make(chan struct{})
 	go func() {
-		for {
-			ev := s.PollEvent()
-			switch ev := ev.(type) {
+		for event := range s.EventQ() {
+			switch ev := event.(type) {
 			case *tcell.EventKey:
 				switch ev.Key() {
 				case tcell.KeyEscape, tcell.KeyEnter:
 					close(quit)
 					return
 				case tcell.KeyRune:
-					switch ev.Rune() {
-					case 'q':
+					switch ev.Str() {
+					case "q":
 						result = true
 						close(quit)
 						return
@@ -189,9 +196,8 @@ func showImage(s tcell.Screen, img image.Image, gray bool, timeout time.Duration
 	}()
 
 	go func() {
-		for {
-			ev := s.PollEvent()
-			switch ev := ev.(type) {
+		for event := range s.EventQ() {
+			switch ev := event.(type) {
 			case *tcell.EventKey:
 				switch ev.Key() {
 				case tcell.KeyEscape, tcell.KeyEnter:
@@ -218,20 +224,20 @@ func showImage(s tcell.Screen, img image.Image, gray bool, timeout time.Duration
 					// m.DrawTo(s)
 					show <- true // s.Show()
 				case tcell.KeyRune:
-					switch ev.Rune() {
-					case '-':
+					switch ev.Str() {
+					case "-":
 						m.ZoomOut()
 						// m.DrawTo(s)
 						show <- true // s.Show()
-					case '+', 'z':
+					case "+", "z":
 						m.ZoomIn()
 						// m.DrawTo(s)
 						show <- true // s.Show()
-					case '0':
+					case "0":
 						m.ResetZoom()
 						// m.DrawTo(s)
 						show <- true // s.Show()
-					case 'q':
+					case "q":
 						result = true
 						close(quit)
 						return
@@ -255,7 +261,7 @@ func showImage(s tcell.Screen, img image.Image, gray bool, timeout time.Duration
 			defer t.Stop()
 			select {
 			case <-t.C:
-				s.PostEvent(tcell.NewEventInterrupt(nil))
+				s.EventQ() <- tcell.NewEventInterrupt(nil)
 			case <-quit:
 				break
 			}
